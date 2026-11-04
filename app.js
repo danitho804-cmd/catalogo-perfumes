@@ -10,14 +10,14 @@ var BUCKET = "fotos";
 var SB = SUPABASE_URL.replace(/\/+$/, "");
 var CONFIGURED = SUPABASE_URL.indexOf("TU-PROYECTO") < 0 && SUPABASE_KEY.indexOf("TU-CLAVE") < 0;
 
-var S = {store:"",wa:"",cur:"$",hSub:"",hTit:"",secT:"",secS:"",foot:"",acc:"#ff1f3d",spd:3,greet:"Hola",cats:[],prods:[]},
+var S = {store:"",wa:"",cur:"$",hSub:"",hTit:"",secT:"",secS:"",foot:"",acc:"#3f7bff",spd:3,greet:"Hola",cats:[],prods:[]},
     cart = {}, cur = 0, timer, dirty = false, ADMIN = false, adm = {tab:"prods", edit:null}, famSel = null, armed = null, sess = null;
 var $ = function(i){return document.getElementById(i)};
 var esc = function(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
 var money = function(n){return S.cur+Number(n||0).toLocaleString("es-MX")};
 var byId = function(a,id){return a.filter(function(x){return x.id==id})[0]};
-function toast(t){var e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove("on")},2600)}
-function bottle(c,u){c=c||["#ff1f3d","#7a0014"];return '<svg viewBox="0 0 120 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g'+u+'" x1="0" x2="1"><stop offset="0" stop-color="'+c[1]+'"/><stop offset=".45" stop-color="'+c[0]+'"/><stop offset="1" stop-color="'+c[1]+'"/></linearGradient><linearGradient id="k'+u+'" x1="0" x2="1"><stop offset="0" stop-color="#6b5b2a"/><stop offset=".5" stop-color="#f3dc8a"/><stop offset="1" stop-color="#6b5b2a"/></linearGradient></defs><rect x="40" y="6" width="40" height="34" rx="4" fill="url(#k'+u+')"/><rect x="50" y="40" width="20" height="14" fill="#ddd" opacity=".6"/><rect x="14" y="54" width="92" height="128" rx="14" fill="url(#g'+u+')" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/><rect x="30" y="92" width="60" height="40" rx="3" fill="rgba(0,0,0,.5)" stroke="#f3dc8a" stroke-width=".8"/><path d="M24 66 Q22 120 28 170" stroke="rgba(255,255,255,.55)" stroke-width="5" fill="none" stroke-linecap="round"/></svg>'}
+function toast(t){var e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove("on")},Math.min(2600+t.length*45,8000))}
+function bottle(c,u){c=c||["#3f7bff","#0b2a7a"];return '<svg viewBox="0 0 120 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g'+u+'" x1="0" x2="1"><stop offset="0" stop-color="'+c[1]+'"/><stop offset=".45" stop-color="'+c[0]+'"/><stop offset="1" stop-color="'+c[1]+'"/></linearGradient><linearGradient id="k'+u+'" x1="0" x2="1"><stop offset="0" stop-color="#6b5b2a"/><stop offset=".5" stop-color="#f3dc8a"/><stop offset="1" stop-color="#6b5b2a"/></linearGradient></defs><rect x="40" y="6" width="40" height="34" rx="4" fill="url(#k'+u+')"/><rect x="50" y="40" width="20" height="14" fill="#ddd" opacity=".6"/><rect x="14" y="54" width="92" height="128" rx="14" fill="url(#g'+u+')" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/><rect x="30" y="92" width="60" height="40" rx="3" fill="rgba(0,0,0,.5)" stroke="#f3dc8a" stroke-width=".8"/><path d="M24 66 Q22 120 28 170" stroke="rgba(255,255,255,.55)" stroke-width="5" fill="none" stroke-linecap="round"/></svg>'}
 function pic(p,u,lz){return p.img?'<img src="'+esc(p.img)+'" alt="'+esc(p.n)+'" decoding="async"'+(lz?' loading="lazy"':'')+'>':bottle(p.c,u)}
 
 /* ===== Supabase: sesión del administrador (solo con fetch, sin librerías) ===== */
@@ -31,9 +31,20 @@ function clearSess(){sess=null;try{localStorage.removeItem("cat_sess")}catch(e){
 var USER_DOMAIN = "@catalogo.com";
 function toEmail(u){u=String(u||"").trim().toLowerCase();return u.indexOf("@")<0?u+USER_DOMAIN:u}
 async function login(user,pass){
-  var r=await fetch(SB+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"apikey":SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email:toEmail(user),password:pass})});
-  var j={};try{j=await r.json()}catch(e){}
-  if(!r.ok||!j.access_token)throw new Error("Usuario o contraseña incorrectos");
+  var email=toEmail(user),r,j={};
+  try{
+    r=await fetch(SB+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"apikey":SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({email:email,password:pass})});
+  }catch(e){throw new Error("No hay conexión con Supabase. Revisa tu internet.")}
+  try{j=await r.json()}catch(e){}
+  if(!r.ok||!j.access_token){
+    var c=String(j.error_code||j.error||""),m=String(j.msg||j.message||j.error_description||"");
+    console.warn("Login Supabase:",r.status,c,m);
+    if(c=="email_not_confirmed"||/not confirmed/i.test(m))throw new Error("Tu usuario existe pero falta confirmarlo. En Supabase: Authentication > Users > ... > Confirm user.");
+    if(c=="invalid_credentials"||/invalid login/i.test(m))throw new Error("No coincide. Busqué el correo "+email+". Debe ser idéntico al de Supabase > Authentication > Users, y la contraseña también.");
+    if(c=="email_provider_disabled"||/disabled/i.test(m))throw new Error("El acceso con correo está desactivado. Actívalo en Supabase > Authentication > Sign In / Providers > Email.");
+    if(r.status==401||/api key|apikey/i.test(m))throw new Error("La clave de Supabase de app.js no es válida. Cópiala de nuevo de Project Settings > API.");
+    throw new Error(m||("No se pudo entrar (error "+r.status+")"));
+  }
   saveSess(j);
 }
 async function getToken(){
@@ -92,7 +103,7 @@ async function boot(){
 }
 
 /* ===== Vitrina ===== */
-function head(){$("logo").textContent=S.store||"✦";$("hSub").textContent=S.hSub||"";$("hTit").textContent=S.hTit||"";$("secT").textContent=S.secT||"";$("secS").textContent=S.secS||"";$("footT").textContent=S.foot||"";var a=S.acc||"#ff1f3d",n=parseInt(a.slice(1),16),f=function(v){return Math.round(v*.6)},st=document.documentElement.style;st.setProperty("--red",a);st.setProperty("--red2","rgb("+f(n>>16)+","+f((n>>8)&255)+","+f(n&255)+")");}
+function head(){$("logo").textContent=S.store||"✦";$("hSub").textContent=S.hSub||"";$("hTit").textContent=S.hTit||"";$("secT").textContent=S.secT||"";$("secS").textContent=S.secS||"";$("footT").textContent=S.foot||"";var a=((S.acc&&S.acc.toLowerCase()!="#ff1f3d")?S.acc:"#3f7bff"),n=parseInt(a.slice(1),16),f=function(v){return Math.round(v*.6)},st=document.documentElement.style;st.setProperty("--red",a);st.setProperty("--red2","rgb("+f(n>>16)+","+f((n>>8)&255)+","+f(n&255)+")");}
 var slides=[],list=[];
 function buildCarousel(){
   list=S.prods.filter(function(p){return p.car&&!p.off});
@@ -207,7 +218,7 @@ function prodsHTML(){
   S.cats.forEach(function(c){
     h+='<h3 style="font-size:.85rem;margin:14px 0 8px;color:var(--red)">'+esc(c.n.toUpperCase())+'</h3>';
     S.prods.filter(function(p){return p.cat==c.id}).forEach(function(p,i){
-      h+='<div class="row"><div class="th">'+pic(p,"a"+p.id)+'</div><div class="nm">'+esc(p.n)+'<small>'+money(p.p)+' · '+esc(p.ml)+' ml'+(p.car?' · en carrusel':'')+(p.out?' · agotado':'')+(p.off?' · oculto':'')+'</small></div><div class="ac"><button class="btn sm" data-up="'+p.id+'">↑</button><button class="btn sm" data-dn="'+p.id+'">↓</button><button class="btn sm" data-ed="'+p.id+'">Editar</button><button class="btn sm" data-dup="'+p.id+'">Duplicar</button><button class="btn sm" data-del="'+p.id+'">Eliminar</button></div></div>'});
+      h+='<div class="row"><div class="th">'+pic(p,"a"+p.id)+'</div><div class="nm">'+esc(p.n)+'<small>'+money(p.p)+' · '+esc(p.ml)+' ml'+(p.car?' · en carrusel':'')+(p.out?' · agotado':'')+(p.off?' · oculto':'')+'</small></div><div class="ac"><button class="btn sm" data-top="'+p.id+'" title="Poner o quitar de los Top">'+(p.car?'★ Top':'☆ Top')+'</button><button class="btn sm" data-up="'+p.id+'">↑</button><button class="btn sm" data-dn="'+p.id+'">↓</button><button class="btn sm" data-ed="'+p.id+'">Editar</button><button class="btn sm" data-dup="'+p.id+'">Duplicar</button><button class="btn sm" data-del="'+p.id+'">Eliminar</button></div></div>'});
   });
   return h||'<p class="note">Aún no hay perfumes.</p>';
 }
@@ -218,7 +229,7 @@ function formHTML(){
   +'<label>Etiqueta (Nuevo, Premium...)<input data-f="tag" value="'+esc(p.tag)+'"></label><label>Ocasión / temporada<input data-f="d" value="'+esc(p.d)+'"></label>'
   +'<label class="w2">Notas olfativas<input data-f="notas" value="'+esc(p.notas)+'"></label>'
   +'<label class="w2">Características (una por línea)<textarea data-f="e" rows="4">'+esc((p.e||[]).join("\n"))+'</textarea></label>'
-  +'<label class="w2"><span><input type="checkbox" data-f="car" style="width:auto;margin-right:8px"'+(p.car?" checked":"")+'>Mostrar en el carrusel principal</span></label><label><span><input type="checkbox" data-f="out" style="width:auto;margin-right:8px"'+(p.out?" checked":"")+'>Marcar como agotado</span></label><label><span><input type="checkbox" data-f="off" style="width:auto;margin-right:8px"'+(p.off?" checked":"")+'>Ocultar del catálogo</span></label>'
+  +'<label class="w2"><span><input type="checkbox" data-f="car" style="width:auto;margin-right:8px"'+(p.car?" checked":"")+'>★ Top / más solicitado (aparece en el carrusel principal)</span></label><label><span><input type="checkbox" data-f="out" style="width:auto;margin-right:8px"'+(p.out?" checked":"")+'>Marcar como agotado</span></label><label><span><input type="checkbox" data-f="off" style="width:auto;margin-right:8px"'+(p.off?" checked":"")+'>Ocultar del catálogo</span></label>'
   +'<div class="w2"><label>Foto del perfume (PNG o WebP sin fondo)</label><div class="pv" id="pv">'+pic(p,"pv")+'</div><div class="bar" style="margin:10px 0 0"><label class="btn sm" style="cursor:pointer">Subir foto<input type="file" id="aFile" accept="image/png,image/webp,image/*" style="display:none"></label><button class="btn sm" id="aNoImg">Quitar foto</button></div><label style="margin-top:10px">O pega la dirección de una foto ya subida (ej. images/oud.png)<input id="aImgPath" value="'+esc(p.img&&p.img.indexOf("data:")!=0?p.img:"")+'"></label><p class="note">La foto se reduce y se guarda en tu carpeta de fotos de Supabase. Si no hay foto, se muestra un frasco ilustrado.</p></div></div>'
   +'<div class="bar" style="margin-top:16px"><button class="btn red" id="aSave">Guardar perfume</button><button class="btn" id="aCancel">Cancelar</button></div>';
 }
@@ -228,7 +239,7 @@ function catsHTML(){
 }
 function setHTML(){
   return '<div class="fg"><label>Nombre de la tienda (vacío = sin nombre)<input data-s="store" value="'+esc(S.store)+'"></label><label>WhatsApp (código de país + número)<input data-s="wa" value="'+esc(S.wa)+'"></label>'
-  +'<label>Símbolo de moneda<input data-s="cur" value="'+esc(S.cur)+'"></label><label>Saludo de WhatsApp<input data-s="greet" value="'+esc(S.greet)+'"></label><label>Texto pequeño del inicio<input data-s="hSub" value="'+esc(S.hSub)+'"></label><label class="w2">Título principal<input data-s="hTit" value="'+esc(S.hTit)+'"></label><label>Título del catálogo<input data-s="secT" value="'+esc(S.secT)+'"></label><label>Subtítulo del catálogo<input data-s="secS" value="'+esc(S.secS)+'"></label><label class="w2">Texto del pie de página<input data-s="foot" value="'+esc(S.foot)+'"></label><label>Segundos por perfume en el carrusel<input data-s="spd" type="number" min="1" max="10" value="'+esc(S.spd)+'"></label><label>Color de acento (botones y brillos)<input data-s="acc" type="color" value="'+esc(S.acc||"#ff1f3d")+'" style="height:42px;padding:3px"></label></div>'
+  +'<label>Símbolo de moneda<input data-s="cur" value="'+esc(S.cur)+'"></label><label>Saludo de WhatsApp<input data-s="greet" value="'+esc(S.greet)+'"></label><label>Texto pequeño del inicio<input data-s="hSub" value="'+esc(S.hSub)+'"></label><label class="w2">Título principal<input data-s="hTit" value="'+esc(S.hTit)+'"></label><label>Título del catálogo<input data-s="secT" value="'+esc(S.secT)+'"></label><label>Subtítulo del catálogo<input data-s="secS" value="'+esc(S.secS)+'"></label><label class="w2">Texto del pie de página<input data-s="foot" value="'+esc(S.foot)+'"></label><label>Segundos por perfume en el carrusel<input data-s="spd" type="number" min="1" max="10" value="'+esc(S.spd)+'"></label><label>Color de acento (botones y brillos)<input data-s="acc" type="color" value="'+esc(((S.acc&&S.acc.toLowerCase()!="#ff1f3d")?S.acc:"#3f7bff"))+'" style="height:42px;padding:3px"></label></div>'
   +'<div class="bar" style="margin-top:18px"><button class="btn" id="aExp">⬇ Exportar respaldo (.json)</button><label class="btn" style="cursor:pointer">⬆ Importar respaldo<input type="file" id="aImp" accept=".json,application/json" style="display:none"></label></div><p class="note">El respaldo incluye todos tus perfumes, categorías y ajustes. Las fotos se guardan como enlaces a tu carpeta de fotos. Tu contraseña de administrador se cambia desde Supabase (Authentication).</p>';
 }
 function mv(a,id,d){var i=a.findIndex(function(x){return x.id==id}),j=i+d;if(j<0||j>=a.length)return;var t=a[i];a[i]=a[j];a[j]=t}
@@ -238,8 +249,9 @@ function bind(){
   $("aOut").onclick=function(){if(dirty&&!confirm("Tienes cambios sin guardar. ¿Cerrar sesión de todos modos?"))return;clearSess();ADMIN=false;$("admOpen").classList.remove("on");$("adm").classList.remove("on");toast("Sesión cerrada")};
   q("[data-t]",function(b){b.onclick=function(){adm.tab=b.dataset.t;adm.edit=null;admRender()}});
   $("aPub").onclick=publish;
-  var nb=$("aNew");if(nb)nb.onclick=function(){adm.edit={id:"p"+Date.now(),cat:S.cats[0]?S.cats[0].id:"",n:"",p:0,ml:100,notas:"",e:[],d:"",tag:"",img:"",car:true,c:["#ff1f3d","#7a0014"],isNew:true};admRender()};
+  var nb=$("aNew");if(nb)nb.onclick=function(){adm.edit={id:"p"+Date.now(),cat:S.cats[0]?S.cats[0].id:"",n:"",p:0,ml:100,notas:"",e:[],d:"",tag:"",img:"",car:true,c:["#3f7bff","#0b2a7a"],isNew:true};admRender()};
   q("[data-ed]",function(b){b.onclick=function(){adm.edit=JSON.parse(JSON.stringify(byId(S.prods,b.dataset.ed)));admRender()}});
+  q("[data-top]",function(b){b.onclick=function(){var p=byId(S.prods,b.dataset.top);p.car=!p.car;mark();all();toast(p.car?"Agregado a los Top ★":"Quitado de los Top")}});
   q("[data-dup]",function(b){b.onclick=function(){var o=JSON.parse(JSON.stringify(byId(S.prods,b.dataset.dup)));o.id="p"+Date.now();o.n+=" (copia)";var i=S.prods.findIndex(function(x){return x.id==b.dataset.dup});S.prods.splice(i+1,0,o);mark();all();toast("Duplicado ✓")}});
   q("[data-up]",function(b){b.onclick=function(){mv(S.prods,b.dataset.up,-1);mark();all()}});
   q("[data-dn]",function(b){b.onclick=function(){mv(S.prods,b.dataset.dn,1);mark();all()}});
@@ -306,4 +318,4 @@ boot();
 (async function(){var t=await getToken();if(t){ADMIN=true;$("admOpen").classList.add("on")}})();
 
 /* Partículas de fondo */
-(function(){var cv=$("fx"),x=cv.getContext("2d"),W,H,ps=[];if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight}function mk(r){return{x:Math.random()*W,y:r?Math.random()*H:H+10,r:Math.random()*2.2+.6,v:Math.random()*.7+.25,a:Math.random()*.6+.2,w:Math.random()*6.28}}rs();addEventListener("resize",rs);for(var i=0;i<(innerWidth<700?16:40);i++)ps.push(mk(true));(function f(){x.clearRect(0,0,W,H);ps.forEach(function(p,i){p.y-=p.v;p.w+=.02;p.x+=Math.sin(p.w)*.4;if(p.y<-10)ps[i]=mk(false);x.beginPath();x.arc(p.x,p.y,p.r,0,6.3);x.fillStyle="rgba(255,"+(40+p.r*20|0)+",70,"+p.a+")";x.fill()});requestAnimationFrame(f)})()})();
+(function(){var cv=$("fx"),x=cv.getContext("2d"),W,H,ps=[];if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight}function mk(r){return{x:Math.random()*W,y:r?Math.random()*H:H+10,r:Math.random()*2.2+.6,v:Math.random()*.7+.25,a:Math.random()*.6+.2,w:Math.random()*6.28}}rs();addEventListener("resize",rs);for(var i=0;i<(innerWidth<700?16:40);i++)ps.push(mk(true));(function f(){x.clearRect(0,0,W,H);ps.forEach(function(p,i){p.y-=p.v;p.w+=.02;p.x+=Math.sin(p.w)*.4;if(p.y<-10)ps[i]=mk(false);x.beginPath();x.arc(p.x,p.y,p.r,0,6.3);x.fillStyle="rgba("+(110+p.r*25|0)+",170,255,"+p.a+")";x.fill()});requestAnimationFrame(f)})()})();
