@@ -82,24 +82,44 @@ async function saveRemote(tok){
 }
 function cacheSet(){try{localStorage.setItem("cat_cache",JSON.stringify(S))}catch(e){}}
 function applyData(d){
-  if(!d||!d.cats||!d.prods)return false;
+  if(!d||!Array.isArray(d.cats)||!Array.isArray(d.prods)||!d.cats.length)return false;
   delete d.pin;S=d;
   if(!byId(S.cats,famSel))famSel=S.cats[0]&&S.cats[0].id;
   return true;
 }
 async function boot(){
-  var shown=false,cached=null;
+  var shown=false,cached=null,errs=[];
   try{cached=JSON.parse(localStorage.getItem("cat_cache"))}catch(e){}
   if(applyData(cached)){all();shown=true}
-  else{try{var r=await fetch("data.json");if(applyData(await r.json())){all();shown=true}}catch(e){}}
+  else{
+    try{
+      var r=await fetch("data.json",{cache:"no-store"});
+      if(!r.ok)errs.push("No se encontró data.json en tu sitio (error "+r.status+"). Debe estar en la misma carpeta que index.html.");
+      else{
+        var j=await r.json();
+        if(applyData(j)){all();shown=true}
+        else errs.push("data.json se leyó, pero no tiene la lista de categorías (cats) y perfumes (prods).");
+      }
+    }catch(e){errs.push("data.json tiene un error de formato (revisa comas y comillas) o no se pudo abrir. Si abriste index.html con doble clic, el navegador lo bloquea: súbelo al hosting. Detalle: "+(e.message||e))}
+  }
   if(CONFIGURED){
     try{
       var d=await loadRemote();
-      if(d&&!dirty&&JSON.stringify(d)!==JSON.stringify(S)){applyData(d);all();shown=true}
-      if(d)cacheSet();
-    }catch(e){}
+      if(!d)errs.push("Supabase: la tabla catalogo no tiene la fila con id = 1, o no hay permiso de lectura (revisa la política SELECT para el público).");
+      else if(!Array.isArray(d.cats)||!d.cats.length)errs.push("Supabase: el contenido de la columna data no tiene categorías (cats).");
+      else{
+        if(!dirty&&JSON.stringify(d)!==JSON.stringify(S)){applyData(d);all();shown=true}
+        cacheSet();
+      }
+    }catch(e){errs.push("Supabase: "+(e.message||e))}
   }
-  if(!shown)all();
+  if(!shown){
+    all();
+    if(errs.length){
+      console.warn("Catálogo sin datos:",errs);
+      $("grid").innerHTML='<div class="empty" style="grid-column:1/-1;max-width:560px;margin:10px auto"><b style="color:#fff">No se pudo cargar el catálogo</b><br><br>'+errs.map(esc).join("<br><br>")+'</div>';
+    }
+  }
 }
 
 /* ===== Vitrina ===== */
