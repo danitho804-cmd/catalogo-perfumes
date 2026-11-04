@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Catálogo de Perfumes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="fx" style="position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>
+<header class="glass">
+  <div class="logo" id="logo" data-dyn></div>
+  <div style="display:flex;gap:8px"><button class="btn admbtn" id="admOpen">⚙ Administrar</button><button class="btn" id="openCart">🛍 Mi carrito <span id="count">0</span></button></div>
+</header>
+<div class="hero"><small id="hSub"></small><h1 id="hTit"></h1></div>
+<div class="wrap" id="wrap"><div class="stage" id="stage" data-dyn></div><button class="btn arrow prev" id="prev" aria-label="Anterior">‹</button><button class="btn arrow next" id="next" aria-label="Siguiente">›</button></div>
+<div class="dots" id="dots" data-dyn></div>
+<section class="cat" id="catalogo">
+  <div class="tit"><h2 id="secT"></h2><p id="secS"></p></div>
+  <div class="tabs" id="tabs" data-dyn></div>
+  <div class="grid" id="grid" data-dyn></div>
+</section>
+<footer><span id="footT">Perfumería fina · Pedidos y asesoría por WhatsApp</span><br><button class="btn sm" id="admFoot" style="margin-top:14px;opacity:.75">⚙ Administrar</button></footer>
+
+<div class="ov" id="ov"></div>
+<aside id="cart" class="glass">
+  <h3>TU CARRITO <button class="x" id="closeCart" aria-label="Cerrar">×</button></h3>
+  <div id="items" data-dyn></div>
+  <textarea id="note" rows="3" placeholder="¿Qué necesitas o quieres ver? Cuéntanos (ocasión, aroma favorito, presupuesto...)"></textarea>
+  <div class="tot"><span>Total</span><span id="total"></span></div>
+  <button class="btn wa" id="send">💬 Enviar pedido por WhatsApp</button>
+  <button class="btn full" id="clear">Vaciar carrito</button>
+</aside>
+<div class="det" id="det" data-dyn></div>
+<div class="adm" id="adm" data-dyn></div>
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

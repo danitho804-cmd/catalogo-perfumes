@@ -1,0 +1,27 @@
+{
+  "store": "",
+  "wa": "529833070768",
+  "cur": "$",
+  "hSub": "Colección de autor",
+  "hTit": "El arte de dejar huella",
+  "secT": "Nuestras Fragancias",
+  "secS": "Elige tu familia olfativa",
+  "foot": "Perfumería fina · Pedidos y asesoría por WhatsApp",
+  "greet": "Hola",
+  "acc": "#ff1f3d",
+  "spd": 3,
+  "cats": [
+    { "id": "citricos", "n": "Cítricos", "d": "Frescos, luminosos y energizantes" },
+    { "id": "dulces", "n": "Dulces", "d": "Cálidos, gourmand y sensuales" },
+    { "id": "amaderados", "n": "Amaderados", "d": "Profundos, elegantes e intensos" }
+  ],
+  "prods": [
+    { "id": "p1", "cat": "citricos", "n": "Aurora Cítrica", "c": ["#ffd23f", "#ff9f1c"], "p": 1290, "ml": 100, "d": "Día · Primavera", "notas": "Bergamota, limón siciliano, vetiver", "e": ["Frescura intensa", "Duración 6–8 h"], "img": "", "car": true, "tag": "" },
+    { "id": "p2", "cat": "citricos", "n": "Sol de Amalfi", "c": ["#ffb347", "#ff5e2b"], "p": 1450, "ml": 100, "d": "Día · Verano", "notas": "Naranja, mandarina, neroli", "e": ["Chispeante y juvenil", "Unisex"], "img": "", "car": true, "tag": "Nuevo" },
+    { "id": "p3", "cat": "citricos", "n": "Yuzu Noir", "c": ["#c6ff3d", "#2b8a3e"], "p": 1680, "ml": 75, "d": "Todo el año", "notas": "Yuzu, pomelo, jengibre, cedro", "e": ["Cítrico sofisticado", "Duración 8 h"], "img": "", "car": true, "tag": "" },
+    { "id": "p4", "cat": "dulces", "n": "Rouge Vanille", "c": ["#ff1f3d", "#7a0014"], "p": 1890, "ml": 100, "d": "Noche · Invierno", "notas": "Vainilla, praliné, ámbar", "e": ["Gourmand adictivo", "Alta proyección"], "img": "", "car": true, "tag": "Best seller" },
+    { "id": "p5", "cat": "dulces", "n": "Caramelo Prohibido", "c": ["#ff8a5c", "#a8321a"], "p": 1590, "ml": 100, "d": "Noche · Otoño", "notas": "Caramelo, haba tonka, rosa", "e": ["Dulce y seductor", "Ideal para citas"], "img": "", "car": true, "tag": "" },
+    { "id": "p6", "cat": "amaderados", "n": "Oud Imperial", "c": ["#8a5a2b", "#2b1406"], "p": 2890, "ml": 100, "d": "Noche · Gala", "notas": "Oud, sándalo, cuero, incienso", "e": ["Intenso y majestuoso", "Edición limitada"], "img": "", "car": true, "tag": "Premium" },
+    { "id": "p7", "cat": "amaderados", "n": "Cedro Nocturno", "c": ["#9b7653", "#3a2414"], "p": 1960, "ml": 100, "d": "Noche · Otoño", "notas": "Cedro, pachulí, pimienta negra", "e": ["Masculino y elegante", "Duración 9 h"], "img": "", "car": true, "tag": "" }
+  ]
+}
